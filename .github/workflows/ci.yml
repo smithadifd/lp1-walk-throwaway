@@ -13,3 +13,17 @@ jobs:
       - uses: actions/checkout@v4
       - name: README present
         run: test -s README.md
+      - name: Trigger runs on ready_for_review
+        run: |
+          python3 - <<'EOF'
+          import sys
+          import yaml
+          with open(".github/workflows/ci.yml") as source:
+              doc = yaml.safe_load(source) or {}
+          triggers = doc.get("on", doc.get(True))
+          pull_request = triggers.get("pull_request") if isinstance(triggers, dict) else None
+          types = pull_request.get("types") if isinstance(pull_request, dict) else None
+          if not isinstance(types, list) or "ready_for_review" not in types:
+              print("CI pull_request.types must include ready_for_review", file=sys.stderr)
+              sys.exit(1)
+          EOF
